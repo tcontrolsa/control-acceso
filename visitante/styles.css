@@ -1,0 +1,211 @@
+/**
+ * ESTILOS ESPECÍFICOS - PORTAL VISITANTE
+ * Hereda limpiamente el diseño premium y paleta HSL de shared-styles.css.
+ * Sin reescrituras de colores conflictivas.
+ */
+
+/* Asegurar el contraste de los textos del ticket digital (sobre fondo blanco) */
+.ticket-container {
+  color: var(--text-dark) !important;
+}
+
+.ticket-header h2 {
+  color: var(--text-dark) !important;
+  font-weight: 700;
+}
+
+.ticket-id code {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.qr-help {
+  color: #64748b !important;
+  font-weight: 500;
+}
+
+.pin-label {
+  color: #64748b !important;
+}
+
+.pin-display {
+  color: #0f172a !important;
+}
+
+.pin-help {
+  color: #64748b !important;
+}
+
+.detail-row span {
+  color: #64748b !important;
+}
+
+.detail-row strong {
+  color: #0f172a !important;
+}
+
+/* Botones específicos para el pie de ticket modal */
+.btn-primary-mini {
+  background: var(--primary);
+  color: #ffffff !important;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-primary-mini:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary-mini {
+  background: #e2e8f0;
+  color: #0f172a !important;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-secondary-mini:hover {
+  background: #cbd5e1;
+}
+
+/* Ajuste fino de espaciado en la cuadrícula de inputs */
+.form-grid {
+  margin-bottom: 20px;
+}
+
+body:not(.light-mode) input, body:not(.light-mode) select, body:not(.light-mode) textarea {
+  /* Forzar que los inputs se hereden del sistema HSL de shared-styles.css */
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+body:not(.light-mode) input:focus, body:not(.light-mode) select:focus, body:not(.light-mode) textarea:focus {
+  border-color: var(--border-focus) !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  box-shadow: 0 0 0 4px var(--primary-glow) !important;
+}
+
+body.light-mode input, body.light-mode select, body.light-mode textarea {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, 0.15) !important;
+}
+
+body.light-mode input:focus, body.light-mode select:focus, body.light-mode textarea:focus {
+  background: #ffffff !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px var(--primary-glow) !important;
+}
+
+label {
+  color: var(--text-main) !important;
+  font-weight: 500;
+}
+
+/* ==================== AVISO DE PRIVACIDAD ==================== */
+.privacy-disclaimer-box {
+  background: rgba(226, 39, 38, 0.05);
+  border: 1px solid rgba(226, 39, 38, 0.18);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.privacy-disclaimer-text {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.privacy-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.privacy-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary) !important;
+  margin-bottom: 7px;
+  letter-spacing: 0.3px;
+}
+
+.privacy-body {
+  font-size: 12px;
+  color: var(--text-muted) !important;
+  line-height: 1.65;
+}
+
+.privacy-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-main) !important;
+  font-weight: 500;
+  line-height: 1.55;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(226, 39, 38, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  transition: var(--transition);
+}
+
+.privacy-check-label:hover {
+  background: rgba(226, 39, 38, 0.04);
+  border-color: rgba(226, 39, 38, 0.2);
+}
+
+.privacy-check-label input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  border-radius: 4px !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Light Mode: Privacy box */
+body.light-mode .privacy-disclaimer-box {
+  background: rgba(226, 39, 38, 0.03) !important;
+  border-color: rgba(226, 39, 38, 0.15) !important;
+}
+
+body.light-mode .privacy-check-label {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(226, 39, 38, 0.12) !important;
+  color: #0f172a !important;
+}
+
+body.light-mode .privacy-body {
+  color: #475569 !important;
+}
+
+/* Shake animation for unchecked privacy box */
+@keyframes privacyShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}

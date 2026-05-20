@@ -1,0 +1,33 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dependencias (si usas npm)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Archivos de desarrollo
+.env
+.env.local
+*.pem
+*.key
+
+# Caché
+.cache/
+*.cache
+
+# Build
+dist/
+build/
+
+# Configuración sensible (si es necesario)
+# config.local.js

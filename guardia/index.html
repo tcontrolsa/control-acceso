@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#090d16">
+    <title>Control de Acceso | Guardia de Seguridad</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared-styles.css">
+    <link rel="stylesheet" href="styles.css">
+    <!-- QR Scanner Library Local -->
+    <script src="html5-qrcode.min.js"></script>
+</head>
+<body>
+    <div class="container wide">
+        <!-- Persistent Theme Switcher -->
+        <div class="theme-switch-container">
+            <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar Tema">🌙</button>
+        </div>
+
+        <div class="header">
+            <img src="../Logotipo T Control.png" class="brand-logo" alt="Logo T Control">
+            <h1>Control de Acceso</h1>
+            <p>Portal de Seguridad y Verificación en Dos Pasos</p>
+        </div>
+
+        <!-- Login Section -->
+        <div id="loginSection" class="login-section glassmorphic-subcard">
+            <h3>🔐 Autenticación de Guardia</h3>
+            <p class="login-help">Ingrese su contraseña para habilitar las herramientas de escaneo y registro</p>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="Contraseña de Seguridad" required>
+            </div>
+            <button id="loginBtn" class="btn-primary">Ingresar al Sistema</button>
+        </div>
+
+        <!-- Guard Operations Panel (Hidden until login) -->
+        <div id="mainSection" style="display:none;">
+            <!-- Tabs Menu -->
+            <div class="tabs-header">
+                <button class="tab-btn active" id="tabControlBtn" data-tab="controlTab">🛂 Control de Acceso</button>
+                <button class="tab-btn" id="tabHistoryBtn" data-tab="historyTab">📜 Historial de Visitas</button>
+            </div>
+
+            <!-- TAB 1: CONTROL DE ACCESO -->
+            <div id="controlTab" class="tab-content active">
+                <div class="control-grid">
+                    <!-- Scanner Area -->
+                    <div class="scanner-card">
+                        <div class="card-header">
+                            <h3>📸 Lector de Código QR</h3>
+                            <p>Enfoque el código QR del visitante frente a la cámara</p>
+                        </div>
+                        <div class="scanner-wrapper">
+                            <div id="qr-reader"></div>
+                        </div>
+                    </div>
+
+                    <!-- Manual PIN Entry Area -->
+                    <div class="pin-card">
+                        <div class="card-header">
+                            <h3>🔢 Validación por PIN Manual</h3>
+                            <p>Ingrese el PIN de 4 dígitos generado en el ticket del visitante</p>
+                        </div>
+                        <form id="pinForm" autocomplete="off" onsubmit="event.preventDefault();">
+                            <div class="pin-input-group">
+                                <input type="text" id="pinInput" maxlength="4" placeholder="0000" pattern="[0-9]{4}" inputmode="numeric" required>
+                            </div>
+                            <button type="submit" id="pinSubmitBtn" class="btn-primary">Validar PIN</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Validation Result Card (Glows neon green or red depending on validation status) -->
+                <div id="resultCard" class="result-card" style="display:none;">
+                    <div class="result-header">
+                        <span id="resultBadge" class="badge"></span>
+                        <h3 id="resultTitle">Resultado de la Validación</h3>
+                    </div>
+                    
+                    <div class="result-body">
+                        <!-- Visitor Details -->
+                        <div id="visitInfo" class="result-info"></div>
+                        
+                        <!-- Collaborator Host Details + Photo -->
+                        <div id="hostInfo" class="result-host-card" style="display:none;">
+                            <div class="host-photo-frame">
+                                <img id="hostPhoto" src="" alt="Foto Colaborador">
+                            </div>
+                            <div class="host-text-details">
+                                <span class="host-badge">COLABORADOR / ANFITRIÓN</span>
+                                <h4 id="hostName">Nombre del Colaborador</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ticket-footer" style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+                        <button id="editVisitBtn" class="btn-primary-mini" style="flex: 1; padding: 12px; display: none;">✏️ Editar Visita</button>
+                        <button id="newScanBtn" class="btn-secondary-mini" style="flex: 1; width: auto; margin-top: 0; padding: 12px;">Aceptar y Limpiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: HISTORIAL DE VISITAS -->
+            <div id="historyTab" class="tab-content">
+                <div class="history-controls-card">
+                    <div class="history-filter-row">
+                        <div class="form-group">
+                            <label for="historyDateFilter">📅 Filtrar por Fecha</label>
+                            <input type="date" id="historyDateFilter">
+                        </div>
+                        <button id="refreshHistoryBtn" class="btn-primary-mini">🔄 Actualizar</button>
+                    </div>
+                </div>
+
+                <!-- Card list for history -->
+                <div id="historyList" class="history-grid">
+                    <div class="loading">Cargando registros...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Visit Modal -->
+    <div id="editVisitModal" class="modal" style="display:none;">
+        <div class="modal-content theme-aware" style="max-width: 440px;">
+            <span class="close" id="closeEditModalBtn" style="float:right; cursor:pointer; font-size:24px; font-weight:bold; color:var(--text-muted);">&times;</span>
+            <h3 style="margin-bottom: 20px; font-size: 18px;">✏️ Editar Registro de Visita</h3>
+            <form id="editVisitForm" autocomplete="off" onsubmit="event.preventDefault();">
+                <input type="hidden" id="editVisitId">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="editCedula">Cédula de Identidad</label>
+                    <input type="text" id="editCedula" placeholder="Ej: 12345678">
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="editPlaca">Placa del Vehículo</label>
+                    <input type="text" id="editPlaca" placeholder="Ej: ABC-123">
+                </div>
+                <div class="form-group" style="margin-bottom: 12px; position: relative;">
+                    <label>Persona a quien visita *</label>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select-trigger" id="editPersonaTrigger">
+                            <img id="editPersonaImg" class="colab-select-img" src="" style="display:none;">
+                            <span id="editPersonaLabel">Seleccione el colaborador...</span>
+                            <span class="custom-select-arrow">▼</span>
+                        </div>
+                        <div class="custom-select-dropdown" id="editPersonaDropdown" style="display:none;">
+                            <input type="text" id="editPersonaSearch" class="custom-select-search" placeholder="🔍 Buscar colaborador...">
+                            <div class="custom-select-options" id="editPersonaOptions">
+                                <!-- dynamic list -->
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="editPersonaVisita" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>Acompañantes</label>
+                    <div id="editCompanionsChips" class="chips-container"></div>
+                    <div class="chip-input-wrapper">
+                        <input type="text" id="editCompanionInput" placeholder="Nombre de acompañante">
+                        <button type="button" id="editAddCompanionBtn" class="btn-chip-add">+</button>
+                    </div>
+                </div>
+                <button type="submit" id="saveEditBtn" class="btn-primary" style="width: 100%;">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <script src="../config.js"></script>
+    <!-- Shared Utilities -->
+    <script src="../utils.js"></script>
+    <!-- App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>

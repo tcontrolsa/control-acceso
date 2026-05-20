@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <title>Registro de Visita | Control de Acceso</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared-styles.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Persistent Theme Switcher -->
+        <div class="theme-switch-container">
+            <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar Tema">🌙</button>
+        </div>
+
+        <div class="header">
+            <img src="../Logotipo T Control.png" class="brand-logo" alt="Logo T Control">
+            <h1>Registro de Visita</h1>
+            <p>Complete sus datos para generar su pase digital de acceso</p>
+        </div>
+
+        <form id="visitForm" autocomplete="off">
+            <!-- Bloque 1: Datos personales y vehículo -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="nombre">Nombre completo *</label>
+                    <input type="text" id="nombre" required placeholder="Ej: Juan Pérez">
+                </div>
+
+                <div class="form-group">
+                    <label for="cedula">Cédula de identidad (opcional)</label>
+                    <input type="text" id="cedula" placeholder="Ej: 12345678">
+                </div>
+
+                <div class="form-group">
+                    <label for="empresa">Empresa / Procedencia *</label>
+                    <input type="text" id="empresa" required placeholder="Ej: Tech Solutions">
+                </div>
+
+                <div class="form-group">
+                    <label for="placa">Placa del vehículo (opcional)</label>
+                    <input type="text" id="placa" placeholder="Ej: ABC-123">
+                </div>
+            </div>
+
+            <!-- Acompañantes: debajo de Placa -->
+            <div class="form-group full-width" style="margin-bottom: 24px;">
+                <label>Acompañantes del Visitante (Opcional)</label>
+                <div id="companionsChips" class="chips-container">
+                    <!-- Chips generados dinámicamente -->
+                </div>
+                <div class="chip-input-wrapper">
+                    <input type="text" id="companionInput" placeholder="Nombre del acompañante">
+                    <button type="button" id="addCompanionBtn" class="btn-chip-add">+</button>
+                </div>
+            </div>
+
+            <!-- Bloque 2: Fecha, persona y motivo -->
+            <div class="form-grid" style="margin-bottom: 28px;">
+                <div class="form-group">
+                    <label for="fechaHoraVisita">Fecha y hora de la visita *</label>
+                    <input type="datetime-local" id="fechaHoraVisita" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="personaVisita">Persona a quien visita *</label>
+                    <select id="personaVisita" required>
+                        <option value="">Cargando colaboradores...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="motivo">Motivo de la visita *</label>
+                <textarea id="motivo" rows="2" required placeholder="Ej: Reunión de planificación técnica..."></textarea>
+            </div>
+
+            <!-- Aviso de Privacidad y Descargo de Responsabilidad -->
+            <div class="privacy-disclaimer-box" style="margin-top: 24px;">
+                <div class="privacy-disclaimer-text">
+                    <span class="privacy-icon">🔒</span>
+                    <div>
+                        <p class="privacy-title">Aviso de Privacidad y Uso de Datos</p>
+                        <p class="privacy-body">
+                            La información suministrada en este formulario es de carácter <strong>confidencial</strong> y será utilizada
+                            exclusivamente por <strong>TCONTROL S.A.</strong> para el registro y control de acceso a sus instalaciones.
+                            Sus datos personales (nombre, identificación, empresa, placa y personas que acompaña) serán tratados
+                            conforme a la normativa de protección de datos vigente y con fines únicamente de seguridad física.
+                            Está <strong>estrictamente prohibida</strong> su divulgación, copia, distribución o uso no autorizado a terceros.
+                            Al enviar este formulario, usted declara que los datos ingresados son <strong>verídicos y completos</strong>,
+                            y otorga su consentimiento para su procesamiento con los fines indicados.
+                        </p>
+                    </div>
+                </div>
+                <label class="privacy-check-label" for="privacyCheck">
+                    <input type="checkbox" id="privacyCheck" required>
+                    <span>He leído y acepto el Aviso de Privacidad. Confirmo que los datos ingresados son correctos y autorizo su uso exclusivamente para el control de acceso a las instalaciones de TCONTROL S.A.</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 16px; width: 100%;">
+                <button type="submit" class="btn-primary" id="submitBtn" style="flex: 3;">
+                    <span class="btn-text">Generar Pase Digital</span>
+                    <span class="btn-loader" style="display:none;">⏳ Procesando...</span>
+                </button>
+                <button type="button" id="shareRegisterBtn" class="btn-secondary-mini" style="flex: 2; height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    🔗 Compartir
+                </button>
+            </div>
+        </form>
+
+        <div id="resultModal" class="modal" style="display:none;">
+            <div class="modal-content glassmorphic">
+                <span class="close">&times;</span>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRCode.js local -->
+    <script src="qrcode.min.js"></script>
+    <!-- Configuración centralizada -->
+    <script src="../config.js"></script>
+    <!-- Utilidades compartidas -->
+    <script src="../utils.js"></script>
+    <!-- Lógica de la aplicación -->
+    <script src="app.js"></script>
+</body>
+</html>
