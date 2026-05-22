@@ -11,114 +11,211 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container wide">
         <!-- Persistent Theme Switcher -->
         <div class="theme-switch-container">
             <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar Tema">🌙</button>
         </div>
-
+        <!-- Encabezado con imagen de la empresa -->
         <div class="header">
-            <img src="../Logotipo T Control.png" class="brand-logo" alt="Logo T Control">
-            <h1>Registro de Visita</h1>
-            <p>Complete sus datos para generar su pase digital de acceso</p>
+            <img src="../Logotipo%20T%20Control.png" alt="Logotipo T Control" style="max-height: 80px; margin-bottom: 20px;">
+            <h1>Pase de Visitante</h1>
+            <p>Complete sus datos para generar su pase de acceso digital</p>
         </div>
 
-        <form id="visitForm" autocomplete="off">
-            <!-- Bloque 1: Datos personales y vehículo -->
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="nombre">Nombre completo *</label>
-                    <input type="text" id="nombre" required placeholder="Ej: Juan Pérez">
-                </div>
+        <!-- TABS PARA VISITANTE -->
+        <div class="tabs-header" style="margin-bottom: 24px; display: flex; border-bottom: 1px solid var(--border-color);">
+            <button class="tab-btn active" id="tabNormalBtn" data-tab="normalTab" style="flex:1; background:none; border:none; padding:12px; color:var(--text-main); font-weight:600; font-size:14px; border-bottom: 3px solid var(--primary); cursor:pointer;">Visita Normal</button>
+            <button class="tab-btn" id="tabFreqBtn" data-tab="freqTab" style="flex:1; background:none; border:none; padding:12px; color:var(--text-muted); font-weight:500; font-size:14px; border-bottom: 3px solid transparent; cursor:pointer;">Pase Frecuente</button>
+        </div>
 
-                <div class="form-group">
-                    <label for="cedula">Cédula de identidad (opcional)</label>
-                    <input type="text" id="cedula" placeholder="Ej: 12345678">
-                </div>
+        <!-- TAB NORMAL -->
+        <div id="normalTab" class="tab-content active" style="display:block;">
+            <form id="visitForm" autocomplete="off">
+                <!-- WRAPPER PARA LAYOUT DESKTOP -->
+                <div class="desktop-split" style="display: flex; flex-wrap: wrap; gap: 32px; align-items: stretch;">
+                    
+                    <!-- COLUMNA IZQUIERDA: CAMPOS -->
+                    <div class="form-fields-column" style="flex: 1 1 320px; display: flex; flex-direction: column;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nombre">Nombre completo *</label>
+                                <input type="text" id="nombre" required placeholder="Ej: Juan Pérez">
+                            </div>
+                            <div class="form-group">
+                                <label for="cedula">Cédula de identidad (opcional)</label>
+                                <input type="text" id="cedula" placeholder="Ej: 12345678">
+                            </div>
+                            <div class="form-group">
+                                <label for="empresa">Empresa / Procedencia *</label>
+                                <input type="text" id="empresa" required placeholder="Ej: Tech Solutions">
+                            </div>
+                            <div class="form-group">
+                                <label for="placa">Placa del vehículo (opcional)</label>
+                                <input type="text" id="placa" placeholder="Ej: ABC-123">
+                            </div>
+                        </div>
 
-                <div class="form-group">
-                    <label for="empresa">Empresa / Procedencia *</label>
-                    <input type="text" id="empresa" required placeholder="Ej: Tech Solutions">
-                </div>
+                        <div class="form-group full-width" style="margin-bottom: 24px;">
+                            <label>Acompañantes del Visitante (Opcional)</label>
+                            <div id="companionsChips" class="chips-container"></div>
+                            <div class="chip-input-wrapper" style="display:flex; gap:10px;">
+                                <input type="text" id="companionInput" placeholder="Nombre del acompañante" style="flex: 1;">
+                                <button type="button" id="addCompanionBtn" class="btn-secondary-mini" style="padding: 0 16px; width:auto;">➕ Añadir Acompañante</button>
+                            </div>
+                        </div>
 
-                <div class="form-group">
-                    <label for="placa">Placa del vehículo (opcional)</label>
-                    <input type="text" id="placa" placeholder="Ej: ABC-123">
-                </div>
-            </div>
+                        <div class="form-grid" style="margin-bottom: 28px;">
+                            <div class="form-group">
+                                <label for="fechaHoraVisita">Fecha y hora de la visita *</label>
+                                <input type="datetime-local" id="fechaHoraVisita" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="personaVisita">Persona a quien visita *</label>
+                                <select id="personaVisita" required>
+                                    <option value="">Cargando colaboradores...</option>
+                                </select>
+                            </div>
+                        </div>
 
-            <!-- Acompañantes: debajo de Placa -->
-            <div class="form-group full-width" style="margin-bottom: 24px;">
-                <label>Acompañantes del Visitante (Opcional)</label>
-                <div id="companionsChips" class="chips-container">
-                    <!-- Chips generados dinámicamente -->
-                </div>
-                <div class="chip-input-wrapper">
-                    <input type="text" id="companionInput" placeholder="Nombre del acompañante">
-                    <button type="button" id="addCompanionBtn" class="btn-chip-add">+</button>
-                </div>
-            </div>
+                        <div class="form-group full-width">
+                            <label for="motivo">Motivo de la visita *</label>
+                            <textarea id="motivo" rows="2" required placeholder="Ej: Reunión de planificación técnica..."></textarea>
+                        </div>
+                        
+                        <div class="privacy-disclaimer-box" style="margin-top: auto;">
+                            <div class="privacy-disclaimer-text">
+                                <span class="privacy-icon" style="font-size: 18px;">🔒</span>
+                                <div>
+                                    <p class="privacy-title" style="font-size: 11px; margin-bottom: 4px;">Aviso de Privacidad de Datos</p>
+                                    <p class="privacy-body" style="font-size: 10px; line-height: 1.4;">
+                                        La información es <strong>confidencial</strong> y será utilizada por TCONTROL S.A. 
+                                        exclusivamente para control de acceso y seguridad física. Está prohibida su divulgación. 
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- Bloque 2: Fecha, persona y motivo -->
-            <div class="form-grid" style="margin-bottom: 28px;">
-                <div class="form-group">
-                    <label for="fechaHoraVisita">Fecha y hora de la visita *</label>
-                    <input type="datetime-local" id="fechaHoraVisita" required>
-                </div>
+                    <!-- COLUMNA DERECHA: SEGURIDAD Y CHECKBOX (Dividida en 2 sub-columnas) -->
+                    <div class="safety-rules-column">
+                        
+                        <!-- Sub-columna 1: Textos y reglas -->
+                        <div style="flex: 1 1 300px; display: flex; flex-direction: column;">
+                            <div class="safety-header">
+                                <h3><span style="font-size: 26px;">🛡️</span> Normas de Seguridad</h3>
+                                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); background: rgba(0,0,0,0.1); padding: 4px 10px; border-radius: 12px; font-weight: 600;">Obligatorio</span>
+                            </div>
+                            
+                            <p class="safety-intro">
+                                En <strong>TCONTROL S.A.</strong> la seguridad es nuestra prioridad. El ingreso a nuestras instalaciones exige el estricto uso de <strong>Equipo de Protección Personal (EPP)</strong>:
+                            </p>
 
-                <div class="form-group">
-                    <label for="personaVisita">Persona a quien visita *</label>
-                    <select id="personaVisita" required>
-                        <option value="">Cargando colaboradores...</option>
-                    </select>
-                </div>
-            </div>
+                            <div class="safety-grid-items" style="grid-template-columns: 1fr;">
+                                <div class="safety-item planta">
+                                    <strong><span>👷</span> Visitas a planta</strong>
+                                    <span>Mínimo botas de seguridad y tapones auditivos.</span>
+                                </div>
 
-            <div class="form-group full-width">
-                <label for="motivo">Motivo de la visita *</label>
-                <textarea id="motivo" rows="2" required placeholder="Ej: Reunión de planificación técnica..."></textarea>
-            </div>
+                                <div class="safety-item prov">
+                                    <strong><span>📦</span> Proveedores</strong>
+                                    <span>Botas, tapones y EPP específico según actividad.</span>
+                                </div>
 
-            <!-- Aviso de Privacidad y Descargo de Responsabilidad -->
-            <div class="privacy-disclaimer-box" style="margin-top: 24px;">
-                <div class="privacy-disclaimer-text">
-                    <span class="privacy-icon">🔒</span>
-                    <div>
-                        <p class="privacy-title">Aviso de Privacidad y Uso de Datos</p>
-                        <p class="privacy-body">
-                            La información suministrada en este formulario es de carácter <strong>confidencial</strong> y será utilizada
-                            exclusivamente por <strong>TCONTROL S.A.</strong> para el registro y control de acceso a sus instalaciones.
-                            Sus datos personales (nombre, identificación, empresa, placa y personas que acompaña) serán tratados
-                            conforme a la normativa de protección de datos vigente y con fines únicamente de seguridad física.
-                            Está <strong>estrictamente prohibida</strong> su divulgación, copia, distribución o uso no autorizado a terceros.
-                            Al enviar este formulario, usted declara que los datos ingresados son <strong>verídicos y completos</strong>,
-                            y otorga su consentimiento para su procesamiento con los fines indicados.
-                        </p>
+                                <div class="safety-item contra">
+                                    <strong><span>🔧</span> Contratistas</strong>
+                                    <span>Todo el EPP completo acorde a la naturaleza de los trabajos a realizar (altura, eléctricos, en caliente).</span>
+                                </div>
+                            </div>
+
+                            <div class="safety-warning">
+                                <span style="font-size: 24px; animation: pulse 2s infinite;">⚠️</span>
+                                <span>Prohibido el ingreso a cualquier persona que no porte su EPP correspondiente. Sin excepciones.</span>
+                            </div>
+                        </div>
+
+                        <!-- Sub-columna 2: Imagen y acciones -->
+                        <div style="flex: 1 1 300px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="safety-image-wrapper">
+                                <img src="../seguridad_personal.png" class="safety-image" alt="Infografía de Seguridad Personal">
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
-                <label class="privacy-check-label" for="privacyCheck">
-                    <input type="checkbox" id="privacyCheck" required>
-                    <span>He leído y acepto el Aviso de Privacidad. Confirmo que los datos ingresados son correctos y autorizo su uso exclusivamente para el control de acceso a las instalaciones de TCONTROL S.A.</span>
-                </label>
-            </div>
 
-            <div style="display: flex; gap: 12px; margin-top: 16px; width: 100%;">
-                <button type="submit" class="btn-primary" id="submitBtn" style="flex: 3;">
-                    <span class="btn-text">Generar Pase Digital</span>
-                    <span class="btn-loader" style="display:none;">⏳ Procesando...</span>
-                </button>
-                <button type="button" id="shareRegisterBtn" class="btn-secondary-mini" style="flex: 2; height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    🔗 Compartir
-                </button>
-            </div>
-        </form>
+                <!-- Acciones Finales (Independientes del grid) -->
+                <div id="formActionsContainer" style="margin-top: 32px; display: flex; flex-direction: column; gap: 16px; max-width: 800px; margin-left: auto; margin-right: auto; width: 100%;">
+                    <label class="privacy-check-label" for="privacyCheck" style="display: flex; gap: 14px; align-items: flex-start; padding: 16px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; cursor: pointer; transition: all 0.2s ease;">
+                        <input type="checkbox" id="privacyCheck" required style="width:20px!important; height:20px!important; margin-top: 2px; accent-color: var(--success); cursor: pointer;">
+                        <span style="font-size: 13px; line-height: 1.5;" class="privacy-check-text">
+                            <strong>He leído y acepto</strong> el Aviso de Privacidad y las Normas de Seguridad Industrial. Confirmo que los datos ingresados son veraces.
+                        </span>
+                    </label>
+                    
+                    <button type="submit" class="btn-primary" id="submitBtn" style="width: 100%; height: 54px; font-size: 16px; border-radius: 14px; letter-spacing: 0.5px;">
+                        <span class="btn-text">Generar Pase Digital</span>
+                        <span class="btn-loader" style="display:none;">⏳ Procesando...</span>
+                    </button>
+                </div>
+                <!-- Botones internos (Se mostrarán cuando el formulario esté bloqueado o como alternativa) -->
+                <div id="internalActionsContainer" style="display: none; gap: 12px; margin-top: 16px; width: 100%; flex-direction: column;">
+                    <div style="text-align: center; font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px;">OPCIONES PARA COLABORADORES TCONTROL:</div>
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <button type="button" id="selfRegisterVisitorBtn" class="btn-primary" style="flex: 1; height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            📝 Registrar a mi visitante
+                        </button>
+                        <button type="button" id="shareRegisterBtn" class="btn-secondary-mini" style="flex: 1; height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            🔗 Compartir Enlace
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
-        <div id="resultModal" class="modal" style="display:none;">
-            <div class="modal-content glassmorphic">
-                <span class="close">&times;</span>
-                <div id="resultContent"></div>
+        <!-- TAB PASE FRECUENTE -->
+        <div id="freqTab" class="tab-content" style="display:none;">
+            <div style="background: rgba(59,130,246,0.05); padding:16px; border-radius:12px; margin-bottom:20px; font-size:13px; color:var(--text-muted); line-height:1.5;">
+                <strong style="color:var(--primary); font-size:14px;">Generador de Pase Frecuente</strong><br>
+                Si usted visita frecuentemente nuestras instalaciones, genere un QR permanente. Solo se solicitarán sus datos básicos y el Guardia completará el resto al ingresar.
+            </div>
+            <form id="freqForm" autocomplete="off">
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label>Nombre completo *</label>
+                    <input type="text" id="freqNombre" required>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label>Cédula / Identificación *</label>
+                    <input type="text" id="freqCedula" required>
+                </div>
+                <div class="form-group" style="margin-bottom:24px;">
+                    <label>Empresa *</label>
+                    <input type="text" id="freqEmpresa" required>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                    Generar QR Permanente
+                </button>
+            </form>
+            
+            <div id="freqResult" style="display:none; text-align:center; margin-top:24px; padding:20px; background:white; border-radius:16px; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                <h3 style="color:#0f172a; margin-bottom:8px; font-size:18px;">Su Pase Frecuente</h3>
+                <p style="color:#64748b; font-size:13px; margin-bottom:16px;">Guarde esta imagen o tome una captura de pantalla.</p>
+                <div id="freqQRContainer" style="display:inline-block; padding:16px; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:16px;"></div>
+                <button id="downloadFreqQRBtn" class="btn-primary-mini" style="width:100%;">⬇️ Descargar Pase Frecuente</button>
             </div>
         </div>
+
+        <div id="resultModal" class="modal" style="display:none;">
+            <div class="modal-content glassmorphic" id="resultModalContent" style="padding:0; margin-top:auto; border-radius:24px 24px 0 0; transform:translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                <div style="width: 40px; height: 5px; background: var(--border-color); border-radius: 10px; margin: 12px auto;"></div>
+                <span class="close" style="position:absolute; right:20px; top:12px;">&times;</span>
+                <div id="resultContent" style="padding: 24px;"></div>
+            </div>
+        </div>
+
+        <!-- Modal removed as it's now embedded in the form -->
     </div>
 
     <!-- QRCode.js local -->

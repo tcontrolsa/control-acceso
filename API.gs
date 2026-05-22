@@ -27,7 +27,8 @@ const COLUMNS = {
   FECHA_HORA_SALIDA: 13,
   PIN: 14,
   ESTADO: 15,
-  ACOMPANANTES: 16
+  ACOMPANANTES: 16,
+  ORIGEN_REGISTRO: 17
 };
 
 // ==================== WEB APP ====================
@@ -55,7 +56,30 @@ function doPost(e) {
       return verificarAnfitrion(data.id, data.origen);
     }
 
-    const { nombre, cedula, empresa, motivo, personaVisita, placa, fechaHoraVisita, acompanantes } = data;
+    // Generar un token desde la página del guardia (para caminantes)
+    if (data.accion === 'generarTokenGuardia') {
+      const token = crearToken(SPREADSHEET_ID, 'GUARDIA_APP');
+      return responder({ success: true, token: token });
+    }
+
+    // Validar token sin consumir (para carga inicial de página)
+    if (data.accion === 'validarTokenUrl') {
+      const valido = validarTokenStatus(SPREADSHEET_ID, data.token);
+      return responder({ success: valido, valido: valido });
+    }
+
+    const { nombre, cedula, empresa, motivo, personaVisita, placa, fechaHoraVisita, acompanantes, origen, token } = data;
+
+    // Si el registro proviene del visitante (no guardia manual), consumir token
+    if (origen !== 'guardia_manual') {
+      if (!token) {
+        return responder({ success: false, error: 'Token de acceso requerido. El enlace no es válido.' });
+      }
+      const tokenValido = consumirToken(SPREADSHEET_ID, token);
+      if (!tokenValido) {
+        return responder({ success: false, error: 'El enlace ha expirado o ya fue utilizado.' });
+      }
+    }
 
     // Validar campos requeridos
     if (!nombre || !empresa || !motivo || !personaVisita || !fechaHoraVisita) {
@@ -94,8 +118,11 @@ function doPost(e) {
     // Generar PIN único
     const pin = generarPINUnico(sheet);
 
-    // Preparar fila con datos (17 campos ahora)
-    const fila = new Array(17);
+    // Determinar estado inicial dependiendo del origen
+    const esManual = origen === 'guardia_manual';
+    
+    // Preparar fila con datos (18 campos ahora)
+    const fila = new Array(18);
     fila[COLUMNS.ID] = id;
     fila[COLUMNS.FECHA_CREACION] = fechaCreacion;
     fila[COLUMNS.FECHA_EXPIRACION] = fechaExpiracion;
@@ -106,13 +133,14 @@ function doPost(e) {
     fila[COLUMNS.MOTIVO] = motivo;
     fila[COLUMNS.PERSONA_VISITA] = personaVisita;
     fila[COLUMNS.PLACA] = placa || '';
-    fila[COLUMNS.USADO_ENTRADA] = 'NO';
-    fila[COLUMNS.FECHA_HORA_ENTRADA] = '';
+    fila[COLUMNS.USADO_ENTRADA] = esManual ? 'SI' : 'NO';
+    fila[COLUMNS.FECHA_HORA_ENTRADA] = esManual ? new Date() : '';
     fila[COLUMNS.USADO_SALIDA] = 'NO';
     fila[COLUMNS.FECHA_HORA_SALIDA] = '';
     fila[COLUMNS.PIN] = pin;
-    fila[COLUMNS.ESTADO] = 'agendado';
+    fila[COLUMNS.ESTADO] = esManual ? 'ingreso' : 'agendado';
     fila[COLUMNS.ACOMPANANTES] = Array.isArray(acompanantes) ? acompanantes.join(', ') : (acompanantes || '');
+    fila[COLUMNS.ORIGEN_REGISTRO] = esManual ? 'Guardia (Manual / Frecuente)' : 'Portal Visitante';
 
     sheet.appendRow(fila);
 
@@ -549,7 +577,8 @@ function verificarAnfitrion(id, origen) {
     });
 
     if (autorizado) {
-      return responder({ success: true, nombre: nombreColaborador });
+      const tokenGenerado = crearToken(SPREADSHEET_ID, id.toString().trim().toUpperCase());
+      return responder({ success: true, nombre: nombreColaborador, token: tokenGenerado });
     } else {
       return responder({
         success: false,
@@ -592,6 +621,60 @@ function registrarLog(ss, logData) {
   } catch (e) {
     Logger.log('Error registrando log: ' + e.toString());
   }
+}
+
+// ==================== TOKENS DE UN SOLO USO ====================
+
+function crearToken(spreadsheetId, generadoPor) {
+  const ss = SpreadsheetApp.openById(spreadsheetId);
+  let tokensSheet = ss.getSheetByName('Tokens');
+  if (!tokensSheet) {
+    tokensSheet = ss.insertSheet('Tokens');
+    tokensSheet.getRange(1, 1, 1, 4).setValues([['Token', 'Generado Por', 'Fecha Creacion', 'Estado']]);
+    tokensSheet.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    tokensSheet.setFrozenRows(1);
+  }
+  
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let token = '';
+  for (let i = 0; i < 10; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  tokensSheet.appendRow([token, generadoPor, new Date(), 'ACTIVO']);
+  return token;
+}
+
+function validarTokenStatus(spreadsheetId, token) {
+  if (!token) return false;
+  const ss = SpreadsheetApp.openById(spreadsheetId);
+  const sheet = ss.getSheetByName('Tokens');
+  if (!sheet) return false;
+  
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === token && data[i][3] === 'ACTIVO') {
+      return true;
+    }
+  }
+  return false;
+}
+
+function consumirToken(spreadsheetId, token) {
+  if (!token) return false;
+  const ss = SpreadsheetApp.openById(spreadsheetId);
+  const sheet = ss.getSheetByName('Tokens');
+  if (!sheet) return false;
+  
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === token && data[i][3] === 'ACTIVO') {
+      // Marcar como usado
+      sheet.getRange(i + 1, 4).setValue('USADO');
+      return true;
+    }
+  }
+  return false;
 }
 
 // ==================== AUXILIARES GENERALES ====================

@@ -45,6 +45,11 @@
 
             <!-- TAB 1: CONTROL DE ACCESO -->
             <div id="controlTab" class="tab-content active">
+                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <button id="showVisitorQRBtn" class="btn-secondary-mini" style="flex: 1; padding: 12px; font-weight: 600;">📱 Mostrar QR de Registro</button>
+                    <button id="manualEntryBtn" class="btn-primary-mini" style="flex: 1; padding: 12px; font-weight: 600;">📝 Registro Manual</button>
+                </div>
+                
                 <div class="control-grid">
                     <!-- Scanner Area -->
                     <div class="scanner-card">
@@ -167,6 +172,64 @@
         </div>
     </div>
 
+    <!-- Manual Entry Modal -->
+    <div id="manualEntryModal" class="modal" style="display:none;">
+        <div class="modal-content theme-aware" style="max-width: 500px; padding: 24px;">
+            <span class="close" id="closeManualModalBtn" style="float:right; cursor:pointer; font-size:24px; font-weight:bold; color:var(--text-muted);">&times;</span>
+            <h3 style="margin-bottom: 20px; font-size: 18px;">📝 Registro Manual de Visita</h3>
+            <form id="manualEntryForm" autocomplete="off">
+                <div class="form-grid">
+                    <div class="form-group"><label>Nombre completo *</label><input type="text" id="manNombre" required></div>
+                    <div class="form-group"><label>Cédula</label><input type="text" id="manCedula"></div>
+                    <div class="form-group"><label>Empresa *</label><input type="text" id="manEmpresa" required></div>
+                    <div class="form-group"><label>Placa</label><input type="text" id="manPlaca"></div>
+                </div>
+                
+                <div class="form-grid" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label>Fecha/Hora Visita *</label>
+                        <input type="datetime-local" id="manFechaHora" required>
+                    </div>
+                    <div class="form-group" style="position: relative;">
+                        <label>Persona a quien visita *</label>
+                        <div class="custom-select-wrapper">
+                            <div class="custom-select-trigger" id="manPersonaTrigger">
+                                <span id="manPersonaLabel">Seleccione...</span>
+                                <span class="custom-select-arrow">▼</span>
+                            </div>
+                            <div class="custom-select-dropdown" id="manPersonaDropdown" style="display:none;">
+                                <input type="text" id="manPersonaSearch" class="custom-select-search" placeholder="🔍 Buscar...">
+                                <div class="custom-select-options" id="manPersonaOptions"></div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="manPersonaVisita" required>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width" style="margin-bottom: 16px;">
+                    <label>Motivo *</label>
+                    <textarea id="manMotivo" rows="2" required></textarea>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Acompañantes</label>
+                    <div id="manCompanionsChips" class="chips-container"></div>
+                    <div class="chip-input-wrapper">
+                        <input type="text" id="manCompanionInput" placeholder="Nombre">
+                        <button type="button" id="manAddCompanionBtn" class="btn-chip-add">+</button>
+                    </div>
+                </div>
+                
+                <button type="submit" id="saveManualBtn" class="btn-primary" style="width: 100%;">
+                    <span class="btn-text">Registrar Visita</span>
+                    <span class="btn-loader" style="display:none;">⏳ Guardando...</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- QRCode for Guard generating visitor links -->
+    <script src="../visitante/qrcode.min.js"></script>
     <!-- Configuration -->
     <script src="../config.js"></script>
     <!-- Shared Utilities -->

@@ -20,11 +20,12 @@ const elements = {
   motivo: document.getElementById('motivo')
 };
 
-// ==================== VARIABLE GLOBAL DE COMPAÑEROS & TEMAS ====================
+// ==================== VARIABLE GLOBAL DE COMPAÑEROS, TEMAS Y TOKEN ====================
 let companionsList = [];
+let accessToken = null;
 
 // ==================== INICIALIZACIÓN ====================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   VisitasUtils.registerServiceWorker('sw.js');
   
   // Establecer fecha y hora actual por defecto en el input
@@ -32,11 +33,122 @@ document.addEventListener('DOMContentLoaded', () => {
   ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
   elements.fechaHoraVisita.value = ahora.toISOString().slice(0, 16);
 
+  await validarTokenAcceso();
+
   cargarColaboradores();
   setupEventListeners();
   inicializarTema();
   inicializarAcompanantesInput();
+  inicializarTabsYSeguridad();
 });
+
+/**
+ * Inicializa Tabs y Modal de Seguridad
+ */
+function inicializarTabsYSeguridad() {
+  // Tabs
+  const tabNormalBtn = document.getElementById('tabNormalBtn');
+  const tabFreqBtn = document.getElementById('tabFreqBtn');
+  const normalTab = document.getElementById('normalTab');
+  const freqTab = document.getElementById('freqTab');
+
+  if (tabNormalBtn && tabFreqBtn) {
+    tabNormalBtn.onclick = () => {
+      tabNormalBtn.classList.add('active');
+      tabNormalBtn.style.borderBottomColor = 'var(--primary)';
+      tabNormalBtn.style.color = 'var(--text-main)';
+      tabFreqBtn.classList.remove('active');
+      tabFreqBtn.style.borderBottomColor = 'transparent';
+      tabFreqBtn.style.color = 'var(--text-muted)';
+      normalTab.style.display = 'block';
+      freqTab.style.display = 'none';
+    };
+    
+    tabFreqBtn.onclick = () => {
+      tabFreqBtn.classList.add('active');
+      tabFreqBtn.style.borderBottomColor = 'var(--primary)';
+      tabFreqBtn.style.color = 'var(--text-main)';
+      tabNormalBtn.classList.remove('active');
+      tabNormalBtn.style.borderBottomColor = 'transparent';
+      tabNormalBtn.style.color = 'var(--text-muted)';
+      freqTab.style.display = 'block';
+      normalTab.style.display = 'none';
+    };
+  }
+
+  // Safety rules are now embedded in the form, so no modal logic is needed.
+}
+
+/**
+ * Valida el token de un solo uso de la URL
+ */
+async function validarTokenAcceso() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  
+  if (!token) {
+    bloquearFormulario('Acceso Denegado. Se requiere un enlace de invitación válido con token.');
+    return;
+  }
+  
+  try {
+    const response = await VisitasUtils.apiCall('POST', {
+      accion: 'validarTokenUrl',
+      token: token
+    });
+    
+    if (response.success && response.valido) {
+      accessToken = token; // Guardar para el envío del formulario
+    } else {
+      bloquearFormulario('Este enlace ya ha sido utilizado o ha expirado.');
+    }
+  } catch (e) {
+    bloquearFormulario('Error al validar el enlace de acceso.');
+  }
+}
+
+function bloquearFormulario(mensaje) {
+  // Ocultar todo el layout del formulario
+  const desktopSplit = document.querySelector('.desktop-split');
+  const formActions = document.getElementById('formActionsContainer');
+  if (desktopSplit) {
+    desktopSplit.style.display = 'none';
+  }
+  if (formActions) {
+    formActions.style.display = 'none';
+  }
+
+  // Mostrar los botones internos (Soy anfitrión, Compartir)
+  const internalActions = document.getElementById('internalActionsContainer');
+  if (internalActions) {
+    internalActions.style.display = 'flex';
+  }
+
+  // Si ya existe el errorBox, no agregarlo de nuevo
+  if (document.getElementById('tokenErrorBox')) return;
+
+  // Mostrar guías simples y amigables para el usuario
+  const errorBox = document.createElement('div');
+  errorBox.id = 'tokenErrorBox';
+  errorBox.style.cssText = 'text-align: center; padding: 32px 20px; background: rgba(59, 130, 246, 0.05); border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(59, 130, 246, 0.2);';
+  errorBox.innerHTML = `
+      <div style="font-size:48px; margin-bottom: 16px;">👋</div>
+      <h3 style="color:var(--primary); margin-bottom: 12px; font-size: 20px;">¡Bienvenido a TCONTROL!</h3>
+      <p style="color:var(--text-main); font-size: 14px; margin-bottom: 16px;">
+        Para registrar su visita de forma segura, necesita un enlace de invitación único.
+      </p>
+      <div style="text-align: left; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+        <strong style="color: #ffffff; display: block; margin-bottom: 8px;">¿Qué debe hacer?</strong>
+        1️⃣ Comuníquese con la persona que va a visitar en TCONTROL.<br>
+        2️⃣ Pídale que le envíe un "Enlace de Registro".<br>
+        3️⃣ Abra el enlace que le envíen para llenar sus datos.<br>
+        4️⃣ Obtendrá su Pase Digital con Código QR.
+      </div>
+  `;
+  
+  // Insert before the internal actions container
+  elements.form.insertBefore(errorBox, internalActions);
+}
 
 /**
  * Inicializa y persiste el tema claro/oscuro
@@ -117,8 +229,61 @@ function setupEventListeners() {
   elements.form.addEventListener('submit', handleFormSubmit);
   const shareRegBtn = document.getElementById('shareRegisterBtn');
   if (shareRegBtn) {
-    shareRegBtn.addEventListener('click', abrirModalCompartirRegistro);
+    shareRegBtn.addEventListener('click', () => abrirModalCompartirRegistro('share'));
   }
+
+  const selfRegBtn = document.getElementById('selfRegisterVisitorBtn');
+  if (selfRegBtn) {
+    selfRegBtn.addEventListener('click', () => abrirModalCompartirRegistro('register'));
+  }
+
+  // Freq Form
+  const freqForm = document.getElementById('freqForm');
+  if (freqForm) {
+    freqForm.addEventListener('submit', handleFreqFormSubmit);
+  }
+}
+
+/**
+ * Maneja la generación del Pase Frecuente
+ */
+function handleFreqFormSubmit(e) {
+  e.preventDefault();
+  
+  const nombre = document.getElementById('freqNombre').value.trim();
+  const cedula = document.getElementById('freqCedula').value.trim();
+  const empresa = document.getElementById('freqEmpresa').value.trim();
+
+  if (!nombre || !cedula || !empresa) {
+    alert('Complete todos los campos');
+    return;
+  }
+
+  const jsonStr = JSON.stringify({
+    freq: true,
+    n: nombre,
+    c: cedula,
+    e: empresa,
+    t: new Date().getTime()
+  });
+
+  // Codificar en Base64 para evitar problemas de caracteres en el QR
+  const qrData = btoa(unescape(encodeURIComponent(jsonStr)));
+
+  document.getElementById('freqResult').style.display = 'block';
+  const qrContainer = document.getElementById('freqQRContainer');
+  generateQRCode(qrContainer, qrData);
+
+  document.getElementById('downloadFreqQRBtn').onclick = () => {
+    const canvas = qrContainer.querySelector('canvas') || qrContainer.querySelector('img');
+    if (canvas) {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL ? canvas.toDataURL('image/png') : canvas.src;
+      link.download = `PaseFrecuente_${cedula}.png`;
+      link.click();
+      VisitasUtils.playSuccessSound();
+    }
+  };
 }
 
 // ==================== CARGAR COLABORADORES ====================
@@ -169,7 +334,8 @@ async function handleFormSubmit(e) {
       fechaHoraVisita: elements.fechaHoraVisita.value,
       personaVisita: elements.personaVisita.value,
       motivo: elements.motivo.value.trim(),
-      acompanantes: companionsList
+      acompanantes: companionsList,
+      token: accessToken
     };
 
     if (
@@ -184,13 +350,13 @@ async function handleFormSubmit(e) {
       return;
     }
 
-    // Validar aceptación del aviso de privacidad
+    // Validar aceptación de reglas
     const privacyCheck = document.getElementById('privacyCheck');
     if (privacyCheck && !privacyCheck.checked) {
-      privacyCheck.closest('.privacy-disclaimer-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      privacyCheck.closest('.privacy-check-label').scrollIntoView({ behavior: 'smooth', block: 'center' });
       privacyCheck.closest('.privacy-check-label').style.animation = 'privacyShake 0.4s ease';
       setTimeout(() => { privacyCheck.closest('.privacy-check-label').style.animation = ''; }, 500);
-      alert('Debe aceptar el Aviso de Privacidad para continuar.');
+      alert('Debe aceptar el Aviso de Privacidad y Normas de Seguridad para continuar.');
       VisitasUtils.playErrorSound();
       return;
     }
@@ -295,18 +461,26 @@ function displayQRResult(qrDataBase64, id, pin, formData) {
     downloadTicketAsImage(id, pin, formData);
   };
 
-  // Mostrar modal
+  // Mostrar modal con animación BottomSheet
   elements.resultModal.style.display = 'flex';
+  setTimeout(() => {
+    document.getElementById('resultModalContent').style.transform = 'translateY(0)';
+  }, 10);
 }
 
 /**
- * Paso 1: Muestra un modal de verificación de ID antes de compartir.
- * Solo los anfitriones registrados en la hoja "Lista" (columna A) pueden compartir el enlace.
+ * Paso 1: Muestra un modal de verificación de ID antes de compartir o registrar.
+ * Solo los anfitriones registrados en la hoja "Lista" (columna A) pueden realizar esta acción.
  */
-function abrirModalCompartirRegistro() {
+function abrirModalCompartirRegistro(actionType = 'share') {
   // Eliminar modales previos si existen
   const prev = document.getElementById('verifyIdModal');
   if (prev) prev.remove();
+
+  const titleText = actionType === 'register' ? 'Registrar a mi Visitante' : 'Verificación de Identidad';
+  const descText = actionType === 'register' 
+    ? 'Ingrese su <strong>ID de colaborador</strong> para habilitar el formulario de registro y llenar los datos de su visitante.'
+    : 'Solo los colaboradores autorizados pueden compartir este enlace de registro.<br>Ingrese su <strong>ID de colaborador</strong> para continuar.';
 
   const modal = document.createElement('div');
   modal.id = 'verifyIdModal';
@@ -316,10 +490,9 @@ function abrirModalCompartirRegistro() {
     <div class="modal-content theme-aware" style="max-width: 380px; text-align: center; padding: 32px 28px;">
       <span class="close-share" style="float:right; cursor:pointer; font-size:24px; font-weight:bold; color:var(--text-muted);">&times;</span>
       <div style="font-size: 40px; margin-bottom: 14px;">🔐</div>
-      <h3 style="margin-bottom: 8px; font-size: 18px; color:var(--text-main);">Verificación de Identidad</h3>
+      <h3 style="margin-bottom: 8px; font-size: 18px; color:var(--text-main);">${titleText}</h3>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-        Solo los colaboradores autorizados pueden compartir este enlace de registro.<br>
-        Ingrese su <strong>ID de colaborador</strong> para continuar.
+        ${descText}
       </p>
       <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
         <div class="form-group">
@@ -369,10 +542,15 @@ function abrirModalCompartirRegistro() {
       });
 
       if (response.success) {
-        // Autorizado: cerrar este modal y abrir el de compartir
         cerrar();
         VisitasUtils.playSuccessSound();
-        _mostrarModalCompartir(response.nombre || id);
+        if (actionType === 'register') {
+          // Si es registro interno, recargar la página con el token generado
+          window.location.href = window.location.pathname + '?token=' + response.token;
+        } else {
+          // Autorizado: cerrar este modal y abrir el de compartir pasándole el token
+          _mostrarModalCompartir(response.nombre || id, response.token);
+        }
       } else {
         VisitasUtils.playErrorSound();
         verifyMsg.style.display = 'block';
@@ -399,8 +577,8 @@ function abrirModalCompartirRegistro() {
 /**
  * Paso 2 (privado): Muestra el panel de compartir con QR tras verificación exitosa.
  */
-function _mostrarModalCompartir(nombreColaborador) {
-  const registerUrl = window.location.origin + window.location.pathname;
+function _mostrarModalCompartir(nombreColaborador, token) {
+  const registerUrl = window.location.origin + window.location.pathname + '?token=' + token;
   const mensaje = `🎟️ *Registro de Visitas T Control*\n` +
       `Regístrate de forma sencilla para ingresar a las instalaciones:\n` +
       `${registerUrl}`;
@@ -669,7 +847,15 @@ function truncateString(str, num) {
 }
 
 function closeResultModal() {
-  elements.resultModal.style.display = 'none';
+  const content = document.getElementById('resultModalContent');
+  if (content) {
+    content.style.transform = 'translateY(100%)';
+    setTimeout(() => {
+      elements.resultModal.style.display = 'none';
+    }, 400); // match transition duration
+  } else {
+    elements.resultModal.style.display = 'none';
+  }
 }
 
 // Cerrar modal al hacer clic fuera

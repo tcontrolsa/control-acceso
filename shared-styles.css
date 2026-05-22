@@ -92,7 +92,11 @@ body {
   box-shadow: var(--shadow-premium);
   position: relative; /* relative for theme switcher alignment */
   animation: entranceAnim 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, max-width 0.3s ease;
+}
+
+.container.wide {
+  max-width: 1200px;
 }
 
 @keyframes entranceAnim {
@@ -623,6 +627,12 @@ button {
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-color);
   color: var(--text-main) !important;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
 }
 
 .modal-content.theme-aware h3,
@@ -991,6 +1001,11 @@ body.light-mode .close-share {
   color: #475569 !important;
 }
 
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
 body.light-mode .close-share:hover {
   color: var(--error) !important;
 }

@@ -43,7 +43,12 @@ const elements = {
   editCompanionInput: document.getElementById('editCompanionInput'),
   editAddCompanionBtn: document.getElementById('editAddCompanionBtn'),
   closeEditModalBtn: document.getElementById('closeEditModalBtn'),
-  saveEditBtn: document.getElementById('saveEditBtn')
+  saveEditBtn: document.getElementById('saveEditBtn'),
+
+  // New buttons
+  showVisitorQRBtn: document.getElementById('showVisitorQRBtn'),
+  manualEntryBtn: document.getElementById('manualEntryBtn'),
+  manualEntryModal: document.getElementById('manualEntryModal')
 };
 
 // ==================== INICIALIZACIÓN ====================
@@ -60,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   inicializarTema();
   inicializarEdicionModal();
+  inicializarManualModal();
   cargarColaboradores();
 });
 
@@ -144,20 +150,19 @@ async function cargarColaboradores() {
 }
 
 /**
- * Inicializa el componente de autocompletado y selección de colaboradores
+ * Inicializa el componente de autocompletado y selección de colaboradores (reutilizable)
  */
-function inicializarCustomSelect() {
-  const trigger = document.getElementById('editPersonaTrigger');
-  const dropdown = document.getElementById('editPersonaDropdown');
-  const searchInput = document.getElementById('editPersonaSearch');
-  const optionsContainer = document.getElementById('editPersonaOptions');
-  const hiddenInput = document.getElementById('editPersonaVisita');
-  const triggerImg = document.getElementById('editPersonaImg');
-  const triggerLabel = document.getElementById('editPersonaLabel');
+function setupCustomSelect(prefix) {
+  const trigger = document.getElementById(`${prefix}Trigger`);
+  const dropdown = document.getElementById(`${prefix}Dropdown`);
+  const searchInput = document.getElementById(`${prefix}Search`);
+  const optionsContainer = document.getElementById(`${prefix}Options`);
+  const hiddenInput = document.getElementById(`${prefix}Visita`);
+  const triggerImg = document.getElementById(`${prefix}Img`); // Opcional
+  const triggerLabel = document.getElementById(`${prefix}Label`);
 
   if (!trigger || !dropdown || !optionsContainer || !hiddenInput) return;
 
-  // Renderizar las opciones
   function renderOptions(filter = '') {
     optionsContainer.innerHTML = '';
     const filtered = collaboratorsList.filter(c => 
@@ -172,10 +177,8 @@ function inicializarCustomSelect() {
     filtered.forEach(colab => {
       const option = document.createElement('div');
       option.className = 'custom-select-option';
-      option.dataset.value = colab.nombre;
       
       const fotoUrl = colab.foto || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80';
-      
       option.innerHTML = `
         <img class="colab-option-img" src="${fotoUrl}" alt="${colab.nombre}" onerror="this.src='https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80'">
         <span>${colab.nombre}</span>
@@ -185,23 +188,22 @@ function inicializarCustomSelect() {
         e.stopPropagation();
         hiddenInput.value = colab.nombre;
         triggerLabel.textContent = colab.nombre;
-        if (colab.foto) {
-          triggerImg.src = colab.foto;
-          triggerImg.style.display = 'block';
-        } else {
-          triggerImg.style.display = 'none';
+        if (triggerImg) {
+          if (colab.foto) {
+            triggerImg.src = colab.foto;
+            triggerImg.style.display = 'block';
+          } else {
+            triggerImg.style.display = 'none';
+          }
         }
-        
         dropdown.style.display = 'none';
         searchInput.value = '';
         renderOptions();
       };
-
       optionsContainer.appendChild(option);
     });
   }
 
-  // Toggle dropdown
   trigger.onclick = (e) => {
     e.stopPropagation();
     const isVisible = dropdown.style.display === 'block';
@@ -213,19 +215,14 @@ function inicializarCustomSelect() {
     }
   };
 
-  // Buscar colaboradores en tiempo real
-  searchInput.oninput = (e) => {
-    renderOptions(e.target.value);
-  };
+  searchInput.oninput = (e) => renderOptions(e.target.value);
+  searchInput.onclick = (e) => e.stopPropagation();
+  window.addEventListener('click', () => dropdown.style.display = 'none');
+}
 
-  searchInput.onclick = (e) => {
-    e.stopPropagation(); // evitar cerrar al hacer click en el buscador
-  };
-
-  // Cerrar dropdown al hacer click fuera
-  window.addEventListener('click', () => {
-    dropdown.style.display = 'none';
-  });
+function inicializarCustomSelect() {
+  setupCustomSelect('editPersona');
+  setupCustomSelect('manPersona');
 }
 
 /**
@@ -392,6 +389,20 @@ function setupEventListeners() {
     elements.editVisitModal.style.display = 'flex';
   });
 
+  // Nuevos botones
+  if(elements.showVisitorQRBtn) {
+    elements.showVisitorQRBtn.addEventListener('click', handleShowVisitorQR);
+  }
+  if(elements.manualEntryBtn) {
+    elements.manualEntryBtn.addEventListener('click', () => {
+      // Establecer fecha por defecto
+      const ahora = new Date();
+      ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+      document.getElementById('manFechaHora').value = ahora.toISOString().slice(0, 16);
+      elements.manualEntryModal.style.display = 'flex';
+    });
+  }
+
   // Setup tabs toggling
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -448,6 +459,243 @@ async function handleLogin() {
     alert(CONFIG.MESSAGES.wrong_password);
     VisitasUtils.playErrorSound();
     elements.passwordInput.value = '';
+  }
+}
+
+// ==================== CERRAR SESION / EXTRAS ====================
+
+/**
+ * Genera un token desde el guardia y muestra el QR para el registro
+ */
+async function handleShowVisitorQR() {
+  try {
+    elements.showVisitorQRBtn.disabled = true;
+    elements.showVisitorQRBtn.textContent = '⏳ Generando...';
+    
+    const response = await VisitasUtils.apiCall('POST', {
+      accion: 'generarTokenGuardia'
+    });
+    
+    if (response.success && response.token) {
+      // Mostrar QR
+      const baseUrl = window.location.href.replace('/guardia/', '/visitante/').split('?')[0];
+      const registerUrl = baseUrl + '?token=' + response.token;
+      
+      const modal = document.createElement('div');
+      modal.id = 'guardShareModal';
+      modal.className = 'modal';
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="modal-content theme-aware" style="max-width: 400px; text-align: center; padding: 32px 28px;">
+          <span class="close-share" style="float:right; cursor:pointer; font-size:24px; font-weight:bold; color:var(--text-muted);">&times;</span>
+          <h3 style="margin-bottom: 8px; font-size: 18px; color:var(--text-main);">Registro de Visitante</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Pida al visitante que escanee este código para registrarse.<br>
+            <strong style="color:var(--error);">Este código es de un solo uso.</strong>
+          </p>
+          <div style="background: white; padding: 14px; border-radius: 14px; display: inline-block; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);" id="guardRegisterQR"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      const qrContainer = modal.querySelector('#guardRegisterQR');
+      if (typeof QRCode !== 'undefined') {
+        if (typeof QRCode.toCanvas === 'function') {
+          const canvas = document.createElement('canvas');
+          qrContainer.appendChild(canvas);
+          QRCode.toCanvas(canvas, registerUrl, { 
+            width: 250, 
+            margin: 2, 
+            color: { dark: '#0f172a', light: '#ffffff' } 
+          });
+        } else {
+          new QRCode(qrContainer, {
+            text: registerUrl,
+            width: 250,
+            height: 250,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: 3
+          });
+        }
+      }
+      
+      const cerrarShare = () => modal.remove();
+      modal.querySelector('.close-share').onclick = cerrarShare;
+      modal.onclick = (e) => { if (e.target === modal) cerrarShare(); };
+      VisitasUtils.playSuccessSound();
+    } else {
+      alert('Error al generar token.');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Error de conexión.');
+  } finally {
+    elements.showVisitorQRBtn.disabled = false;
+    elements.showVisitorQRBtn.textContent = '📱 Mostrar QR de Registro';
+  }
+}
+
+// ==================== REGISTRO MANUAL ====================
+let manualCompanionsList = [];
+
+function inicializarManualModal() {
+  const modal = elements.manualEntryModal;
+  const form = document.getElementById('manualEntryForm');
+  if (!modal || !form) return;
+
+  document.getElementById('closeManualModalBtn').onclick = () => {
+    modal.style.display = 'none';
+  };
+
+  const addCompBtn = document.getElementById('manAddCompanionBtn');
+  const compInput = document.getElementById('manCompanionInput');
+  const compChips = document.getElementById('manCompanionsChips');
+
+  function renderChips() {
+    compChips.innerHTML = '';
+    manualCompanionsList.forEach((name, index) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = `<span>${name}</span><span class="chip-remove" data-index="${index}">&times;</span>`;
+      compChips.appendChild(chip);
+    });
+    compChips.querySelectorAll('.chip-remove').forEach(btn => {
+      btn.onclick = (e) => {
+        const idx = parseInt(e.target.dataset.index);
+        manualCompanionsList.splice(idx, 1);
+        renderChips();
+      };
+    });
+  }
+
+  addCompBtn.onclick = () => {
+    const name = compInput.value.trim();
+    if (name && !manualCompanionsList.includes(name)) {
+      manualCompanionsList.push(name);
+      compInput.value = '';
+      renderChips();
+    }
+  };
+
+  compInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCompBtn.click();
+    }
+  };
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const saveBtn = document.getElementById('saveManualBtn');
+    
+    const formData = {
+      accion: 'registrarVisita', // Uses default API behavior
+      nombre: document.getElementById('manNombre').value.trim(),
+      cedula: document.getElementById('manCedula').value.trim(),
+      empresa: document.getElementById('manEmpresa').value.trim(),
+      placa: document.getElementById('manPlaca').value.trim(),
+      fechaHoraVisita: document.getElementById('manFechaHora').value,
+      personaVisita: document.getElementById('manPersonaVisita').value,
+      motivo: document.getElementById('manMotivo').value.trim(),
+      acompanantes: manualCompanionsList,
+      origen: 'guardia_manual'
+    };
+
+    if (!formData.personaVisita) {
+      alert('Debe seleccionar la persona a quien visita.');
+      return;
+    }
+
+    try {
+      saveBtn.disabled = true;
+      saveBtn.querySelector('.btn-text').style.display = 'none';
+      saveBtn.querySelector('.btn-loader').style.display = 'inline';
+
+      const response = await VisitasUtils.apiCall('POST', formData);
+
+      if (response.success) {
+        VisitasUtils.playSuccessSound();
+        form.reset();
+        manualCompanionsList = [];
+        renderChips();
+        document.getElementById('manPersonaVisita').value = '';
+        document.getElementById('manPersonaLabel').textContent = 'Seleccione...';
+        modal.style.display = 'none';
+        
+        // Show success alert
+        alert('Visita registrada correctamente. PIN: ' + response.pin);
+      } else {
+        throw new Error(response.error);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+      VisitasUtils.playErrorSound();
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.querySelector('.btn-text').style.display = 'inline';
+      saveBtn.querySelector('.btn-loader').style.display = 'none';
+    }
+  };
+}
+
+/**
+ * Procesa un QR de visitante frecuente y muestra el form para completar
+ */
+function handleFreqVisitorScanned(qrObj) {
+  // Limpiar escáner UI (ocultar modal de escaneando si existiera)
+  elements.resultCard.style.display = 'none';
+  VisitasUtils.playSuccessSound();
+
+  // Abrir modal de registro manual pero pre-poblar los datos del visitante frecuente
+  const manNombre = document.getElementById('manNombre');
+  const manCedula = document.getElementById('manCedula');
+  const manEmpresa = document.getElementById('manEmpresa');
+  
+  manNombre.value = qrObj.n || '';
+  manCedula.value = qrObj.c || '';
+  manEmpresa.value = qrObj.e || '';
+  
+  // Highlight auto-filled inputs to show they are dynamic
+  [manNombre, manCedula, manEmpresa].forEach(input => {
+    if (input.value) {
+      input.style.transition = 'all 0.5s ease';
+      input.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+      input.style.borderColor = '#10b981';
+      setTimeout(() => {
+        input.style.backgroundColor = '';
+        input.style.borderColor = '';
+      }, 1500);
+    }
+  });
+  
+  // Establecer la fecha/hora por defecto
+  const ahora = new Date();
+  ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+  document.getElementById('manFechaHora').value = ahora.toISOString().slice(0, 16);
+  
+  elements.manualEntryModal.style.display = 'flex';
+  
+  const modalContent = elements.manualEntryModal.querySelector('.modal-content');
+  
+  // Animación suave de entrada
+  modalContent.style.animation = 'none';
+  setTimeout(() => {
+    modalContent.style.animation = 'resultBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+  }, 10);
+  
+  // Agregar banner de notificación en lugar de un alert molesto
+  let banner = document.getElementById('freqVisitorBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'freqVisitorBanner';
+    banner.style.cssText = 'background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 14px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; gap: 10px; animation: tabFadeIn 0.5s ease-out;';
+    banner.innerHTML = '<span style="font-size:24px;">✨</span> <div><strong style="color:#10b981; font-size:14px;">¡Pase Frecuente Detectado!</strong><br><span style="color:var(--text-main);">Por favor complete el Motivo y la Persona a visitar.</span></div>';
+    
+    const title = modalContent.querySelector('h3');
+    if (title && title.nextSibling) {
+      modalContent.insertBefore(banner, title.nextSibling);
+    }
   }
 }
 
@@ -511,6 +759,28 @@ async function onScanSuccess(decodedText) {
     elements.resultTitle.textContent = 'Procesando Código QR...';
     elements.visitInfo.innerHTML = '<p class="loading-inline">⌛ Consultando la base de datos de visitas...</p>';
     elements.hostInfo.style.display = 'none';
+
+    // Interceptar QR de visitante frecuente (ahora codificado en Base64)
+    try {
+      const decodedJson = decodeURIComponent(escape(atob(decodedText)));
+      const qrObj = JSON.parse(decodedJson);
+      
+      if (qrObj.freq === true) {
+        handleFreqVisitorScanned(qrObj);
+        return; // Terminamos aquí, no llamamos al API de validarQR
+      }
+    } catch (e) {
+      // Fallback: Si también fallara como base64, probamos JSON directo por si acaso (versión anterior)
+      try {
+        const qrObj = JSON.parse(decodedText);
+        if (qrObj.freq === true) {
+          handleFreqVisitorScanned(qrObj);
+          return;
+        }
+      } catch (e2) {
+        // No es JSON ni Base64 de visitante frecuente, continuar con flujo normal
+      }
+    }
 
     const response = await VisitasUtils.apiCall('GET', {
       accion: 'validarQR',
