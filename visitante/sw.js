@@ -1,8 +1,9 @@
-const CACHE_NAME = 'visitas-v2';
+const CACHE_NAME = 'visitas-v3';
 
 const urlsToCache = [
   './',
   'index.html',
+  'error.html',
   'styles.css',
   'app.js',
   'qrcode.min.js',

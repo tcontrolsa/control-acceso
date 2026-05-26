@@ -100,10 +100,10 @@ async function validarTokenAcceso() {
     if (response.success && response.valido) {
       accessToken = token; // Guardar para el envío del formulario
     } else {
-      bloquearFormulario('Este enlace ya ha sido utilizado o ha expirado.');
+      window.location.href = 'error.html';
     }
   } catch (e) {
-    bloquearFormulario('Error al validar el enlace de acceso.');
+    window.location.href = 'error.html';
   }
 }
 
@@ -133,16 +133,14 @@ function bloquearFormulario(mensaje) {
   errorBox.style.cssText = 'text-align: center; padding: 32px 20px; background: rgba(59, 130, 246, 0.05); border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(59, 130, 246, 0.2);';
   errorBox.innerHTML = `
       <div style="font-size:48px; margin-bottom: 16px;">👋</div>
-      <h3 style="color:var(--primary); margin-bottom: 12px; font-size: 20px;">¡Bienvenido a TCONTROL!</h3>
+      <h3 style="color:var(--primary); margin-bottom: 12px; font-size: 20px;">Portal de Anfitriones TCONTROL</h3>
       <p style="color:var(--text-main); font-size: 14px; margin-bottom: 16px;">
-        Para registrar su visita de forma segura, necesita un enlace de invitación único.
+        Esta sección es exclusiva para colaboradores de TCONTROL S.A.
       </p>
       <div style="text-align: left; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-        <strong style="color: #ffffff; display: block; margin-bottom: 8px;">¿Qué debe hacer?</strong>
-        1️⃣ Comuníquese con la persona que va a visitar en TCONTROL.<br>
-        2️⃣ Pídale que le envíe un "Enlace de Registro".<br>
-        3️⃣ Abra el enlace que le envíen para llenar sus datos.<br>
-        4️⃣ Obtendrá su Pase Digital con Código QR.
+        <strong style="color: #ffffff; display: block; margin-bottom: 8px;">¿Qué desea hacer?</strong>
+        <div style="margin-bottom: 8px;"><strong>1️⃣ Registrar Visitante:</strong> Ingrese si su visitante ya se encuentra en recepción y desea llenar los datos por él.</div>
+        <div><strong>2️⃣ Compartir Enlace:</strong> Genere un link seguro de un solo uso y envíelo a su visitante por WhatsApp o correo.</div>
       </div>
   `;
   
